@@ -26,6 +26,8 @@ for url in "$srvurl" "$srcurl" ; do
     dname=$(basename "$url" .git)
     if [ -d "$dname" ] ; then
         cd "$dname"
+        # initial image has this anonymous
+        git remote set-url origin "$url"
         git pull
     else
         cd "$top/"
