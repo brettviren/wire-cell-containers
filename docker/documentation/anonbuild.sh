@@ -2,7 +2,6 @@
 
 top="$(pwd)"
 
-set -x
 srvurl="https://github.com/WireCell/wirecell.github.io.git"
 srvdir="$(basename $srvurl .git)"
 srcurl="https://github.com/WireCell/wire-cell-docs.git"

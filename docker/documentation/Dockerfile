@@ -23,7 +23,7 @@ ENV SSH_KEY=""
 COPY update.sh /root/update.sh
 COPY anonbuild.sh /root/anonbuild.sh
 
-RUN chmod +x /root/update.sh
 RUN chmod +x /root/anonbuild.sh
+RUN chmod +x /root/update.sh
 RUN ./anonbuild.sh
 
