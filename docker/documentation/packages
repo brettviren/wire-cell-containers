@@ -1,0 +1,9 @@
+emacs-nox
+git
+graphviz
+pandoc
+pkg-config
+python3
+python3-jinja2
+python3-pip
+wget

@@ -3,11 +3,13 @@
 This repository holds support for building docker and singularity
 container images relevant to the Wire-Cell Toolkit.
 
-* WCT CI builds
+* WCT Travis-CI builds
+
+- code :: [[https://travis-ci.org/WireCell/wire-cell-build][https://api.travis-ci.org/WireCell/wire-cell-build.svg?branch=master]]
+
+- docs :: [[https://travis-ci.org/WireCell/wire-cell-docs][https://api.travis-ci.org/WireCell/wire-cell-docs.svg?branch=master]]
 
 ** Code
-
-To reproduce what leads to: [[https://travis-ci.org/WireCell/wire-cell-build][https://api.travis-ci.org/WireCell/wire-cell-build.svg?branch=master]]
 
 #+BEGIN_EXAMPLE
   $ docker run brettviren/wct-testing ./run.sh
@@ -38,9 +40,33 @@ To update docker-hub use files under [[./docker/]].
 ** Documentation
 
 WCT has a manual, news blog, Doxygen and other web presence at
-https://wirecell.github.io/.  The documentation is rebuilt as part of
-CI using another container.
+https://wirecell.github.io/.  Some of this documentation may be
+rebuilt as part of CI using a container built with files in
+[[./docker/documentation/]].  The container will have an initial build
+that serves as a basis for an incremental.
 
+To just build an incremental interactively:
+
+#+BEGIN_EXAMPLE
+  $ docker run -it brettviren/wct-documentation
+  indocker$ ./anonbuild.sh
+#+END_EXAMPLE
+
+Take care that when you exit all changes are lost.
+
+To build and commit updates to the wirecell.github.io repo:
+
+#+BEGIN_EXAMPLE
+  $ docker run \
+     -e COMMIT_USER="$(git config user.name)" \
+     -e COMMIT_EMAIL="$(git config user.email)" \
+     -e SSH_KEY="$(cat ~/.ssh/id_rsa_wctghdocs)" \
+     -it brettviren/wct-documentation ./update.sh
+#+END_EXAMPLE
+
+Where the ~SSH_KEY~ is the private key corresponding to a "deployment
+key" registered with GitHub.  This key is written to the working
+container which may remain in your Docker system.
 
 
 
