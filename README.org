@@ -1,32 +1,51 @@
-#+title: Build docker images for Wire-Cell Toolkit
+#+title: Container images for Wire-Cell Toolkit
 
-* Run
+This repository holds support for building docker and singularity
+container images relevant to the Wire-Cell Toolkit.
 
-These may be on [[https://cloud.docker.com/repository/docker/brettviren][my docker hub]].
+* WCT CI builds
+
+** Code
+
+To reproduce what leads to: [[https://travis-ci.org/WireCell/wire-cell-build][https://api.travis-ci.org/WireCell/wire-cell-build.svg?branch=master]]
 
 #+BEGIN_EXAMPLE
-  $ docker run -it brettviren/wct-deb
-  wcdev@8232adbdc455:~$ wire-cell --help
-  Options:
-    -h [ --help ]         wire-cell [options] [arguments]
-    -l [ --logsink ] arg  log sink, filename or 'stdout' or 'stderr', if added 
-                          ':level' then set a log level for the sink
-    -L [ --loglevel ] arg set lowest log level for a log in form 'name:level' or 
-                          just 'level' for all (level one of 
-                          critical,error,warn,info,debug,trace)
-    -a [ --app ] arg      application component to invoke
-    -c [ --config ] arg   provide a configuration file
-    -p [ --plugin ] arg   specify a plugin as name[:lib]
-    -V [ --ext-str ] arg  specify a Jsonnet external variable=value
-    -C [ --ext-code ] arg specify a Jsonnet external variable=code
-    -P [ --path ] arg     add to JSON/Jsonnet search path
+  $ docker run brettviren/wct-testing ./run.sh
 #+END_EXAMPLE
 
-* Build
+To do this interactively:
 
 #+BEGIN_EXAMPLE
-  $ cd debian
-  $ docker build -t brettviren/wct-deb .
-  $ docker push brettviren/wct-deb
+  $ docker run -it brettviren/wct-testing
+  testing@b38483963325:~$ ./run.sh
+  testing@b38483963325:~$ wire-cell --help
+#+END_EXAMPLE
+
+Note, this image does not include ROOT.
+
+To update docker-hub use files under [[./docker/]].
+
+#+BEGIN_EXAMPLE
+  $ cd docker/
+  $ docker build -t brettviren/wct-deb debian/
+  $ docker build -t brettviren/wct-testing testing/
+  $ docker push brettviren/wct-deb 
+  $ docker push brettviren/wct-testing
 #+END_EXAMPLE 
+
+
+
+** Documentation
+
+WCT has a manual, news blog, Doxygen and other web presence at
+https://wirecell.github.io/.  The documentation is rebuilt as part of
+CI using another container.
+
+
+
+
+* Singularity
+
+TBD: singularity containers will be derived from docker.  For now, see [[https://github.com/wirecell/wire-cell-singularity]]
+
 
