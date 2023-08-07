@@ -1,77 +1,106 @@
 #+title: Container images for Wire-Cell Toolkit
 
-This repository holds support for building docker and singularity
-container images relevant to the Wire-Cell Toolkit.
+This repository holds support for building Linux container images
+relevant to the Wire-Cell Toolkit.
 
-* WCT Travis-CI builds
+* Requirements
 
-- code :: [[https://travis-ci.org/WireCell/wire-cell-build][https://api.travis-ci.org/WireCell/wire-cell-build.svg?branch=master]]
+Each image is described in a Dockerfile and you are free to use them
+to build images in your favorite way.
 
-- docs :: [[https://travis-ci.org/WireCell/wire-cell-docs][https://api.travis-ci.org/WireCell/wire-cell-docs.svg?branch=master]]
+A subset are built automatically which requires ~podman~ and ~singularity~
+to be installed.
 
-** Code
+* Building
 
-#+BEGIN_EXAMPLE
-  $ docker run brettviren/wct-testing ./run.sh
-#+END_EXAMPLE
+The images are factored and thus have interdependence.  To get that
+correct, their builds are automated:
 
-To do this interactively:
+#+begin_example
+  $ waf configure build
+  $ ls build/*.sif
+#+end_example
 
-#+BEGIN_EXAMPLE
-  $ docker run -it brettviren/wct-testing
-  testing@b38483963325:~$ ./run.sh
-  testing@b38483963325:~$ wire-cell --help
-#+END_EXAMPLE
+If you wish to install the built Singularity containers to a ~$prefix/containers/singularity/~:
 
-Note, this image does not include ROOT.
+#+begin_example
+  $ waf configure --prefix=$HOME/.local
+  $ waf build install
+#+end_example
 
-To update docker-hub use files under [[./docker/]].
+By default images are produced with the "owner" of "wirecell" which
+matters for the name in the ~podman~ store and the file name for the
+Singularity image.  Another owner can be set:
 
-#+BEGIN_EXAMPLE
-  $ cd docker/
-  $ docker build -t brettviren/wct-deb debian/
-  $ docker build -t brettviren/wct-testing testing/
-  $ docker push brettviren/wct-deb 
-  $ docker push brettviren/wct-testing
-#+END_EXAMPLE 
+#+begin_example
+  $ waf --owner myname
+  $ ls build/myname-*.sif
+#+end_example
+
+* Using
+
+Below are some basic commands to get started.
+
+** Singularity
+
+By default, Singularity makes your host files visible and writable in
+the container.
+
+*** Single commands
+
+#+begin_example
+  $ ./build/wirecell-sluser.sif lsb_release -a
+  LSB Version:	:core-4.1-amd64:core-4.1-noarch
+  Distributor ID:	Scientific
+  Description:	Scientific Linux release 7.9 (Nitrogen)
+  Release:	7.9
+  Codename:	Nitrogen
+#+end_example
+
+*** Interactive 
+
+#+begin_example
+  $ singularity exec --bind /cvmfs build/wirecell-sluser.sif bash
+  
+  Singularity> source /cvmfs/larsoft.opensciencegrid.org/setup_larsoft.sh 
+  Singularity> setup larsoft v09_77_00 -q c14:prof
+  Singularity> art --version
+  art 3.12.00
+  Singularity> exit
+#+end_example
+
+** Podman
+
+t.b.d.
+
+* Cleaning up
+
+To remove ~build/~:
+#+begin_example
+  $ waf distclean
+#+end_example
+
+The local podman will fill:
+
+#+begin_example
+  $ podman image ls
+#+end_example
+
+Any "dangling" images can be pruned:
+
+#+begin_example
+  $ podman image prune
+#+end_example
+
+Or remove things piecemeal:
+
+#+begin_example
+  $ podman image rm localhost/wirecell/slscisoft
+  $ podman image rm localhost/wirecell/sluser
+#+end_example
 
 
+* Other info
 
-** Documentation
-
-WCT has a manual, news blog, Doxygen and other web presence at
-https://wirecell.github.io/.  Some of this documentation may be
-rebuilt as part of CI using a container built with files in
-[[./docker/documentation/]].  The container will have an initial build
-that serves as a basis for an incremental.
-
-To just build an incremental interactively:
-
-#+BEGIN_EXAMPLE
-  $ docker run -it brettviren/wct-documentation
-  indocker$ ./anonbuild.sh
-#+END_EXAMPLE
-
-Take care that when you exit all changes are lost.
-
-To build and commit updates to the wirecell.github.io repo:
-
-#+BEGIN_EXAMPLE
-  $ docker run \
-     -e COMMIT_USER="$(git config user.name)" \
-     -e COMMIT_EMAIL="$(git config user.email)" \
-     -e SSH_KEY="$(cat ~/.ssh/id_rsa_wctghdocs)" \
-     -it brettviren/wct-documentation ./update.sh
-#+END_EXAMPLE
-
-Where the ~SSH_KEY~ is the private key corresponding to a "deployment
-key" registered with GitHub.  This key is written to the working
-container which may remain in your Docker system.
-
-
-
-* Singularity
-
-TBD: singularity containers will be derived from docker.  For now, see [[https://github.com/wirecell/wire-cell-singularity]]
-
-
+- Some notes on use of [[file:docs/podman.org][podman]].
+- How to exploit [[file:docs/direnv.org][direnv]] to make development with a container easier.

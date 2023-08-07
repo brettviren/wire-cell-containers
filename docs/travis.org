@@ -1,0 +1,66 @@
+* WCT Travis-CI builds
+
+- code :: [[https://travis-ci.org/WireCell/wire-cell-build][https://api.travis-ci.org/WireCell/wire-cell-build.svg?branch=master]]
+
+- docs :: [[https://travis-ci.org/WireCell/wire-cell-docs][https://api.travis-ci.org/WireCell/wire-cell-docs.svg?branch=master]]
+
+** Code
+
+#+BEGIN_EXAMPLE
+  $ docker run brettviren/wct-testing ./run.sh
+#+END_EXAMPLE
+
+To do this interactively:
+
+#+BEGIN_EXAMPLE
+  $ docker run -it brettviren/wct-testing
+  testing@b38483963325:~$ ./run.sh
+  testing@b38483963325:~$ wire-cell --help
+#+END_EXAMPLE
+
+Note, this image does not include ROOT.
+
+To update docker-hub use files under [[./docker/]].
+
+#+BEGIN_EXAMPLE
+  $ cd docker/
+  $ docker build -t brettviren/wct-deb debian/
+  $ docker build -t brettviren/wct-testing testing/
+  $ docker push brettviren/wct-deb 
+  $ docker push brettviren/wct-testing
+#+END_EXAMPLE 
+
+
+
+** Documentation
+
+WCT has a manual, news blog, Doxygen and other web presence at
+https://wirecell.github.io/.  Some of this documentation may be
+rebuilt as part of CI using a container built with files in
+[[./docker/documentation/]].  The container will have an initial build
+that serves as a basis for an incremental.
+
+To just build an incremental interactively:
+
+#+BEGIN_EXAMPLE
+  $ docker run -it brettviren/wct-documentation
+  indocker$ ./anonbuild.sh
+#+END_EXAMPLE
+
+Take care that when you exit all changes are lost.
+
+To build and commit updates to the wirecell.github.io repo:
+
+#+BEGIN_EXAMPLE
+  $ docker run \
+     -e COMMIT_USER="$(git config user.name)" \
+     -e COMMIT_EMAIL="$(git config user.email)" \
+     -e SSH_KEY="$(cat ~/.ssh/id_rsa_wctghdocs)" \
+     -it brettviren/wct-documentation ./update.sh
+#+END_EXAMPLE
+
+Where the ~SSH_KEY~ is the private key corresponding to a "deployment
+key" registered with GitHub.  This key is written to the working
+container which may remain in your Docker system.
+
+

@@ -1,0 +1,114 @@
+#+title: podman
+
+~podman~ is a work-alike alternative to ~docker~.  Perhaps the main
+distinction from docker is that podman stores image layers in the
+user's home directory and does not have a daemon.
+
+* Finding images on registries
+
+#+begin_example
+  $ podman search --list-tags 'docker.io/scientificlinux/sl
+  NAME                          TAG
+  docker.io/scientificlinux/sl  6
+  docker.io/scientificlinux/sl  7
+  docker.io/scientificlinux/sl  latest
+#+end_example
+
+* Running images on registries
+
+#+begin_example
+  $ podman run -ti 'docker.io/scientificlinux/sl:7'
+  [root@b52fd1a557be /]# yum -y install redhat-lsb-core
+  [root@b52fd1a557be /]# lsb_release -a
+  LSB Version:	:core-4.1-amd64:core-4.1-noarch
+  Distributor ID:	Scientific
+  Description:	Scientific Linux release 7.9 (Nitrogen)
+  Release:	7.9
+  Codename:	Nitrogen
+#+end_example
+
+* Building a custom image
+
+This images adds packages to the base SL7 as needed to pass SciSoft's
+~checkPrerequisites~ script.
+
+#+begin_example
+  $ cd docker
+  $ podman build -t wirecell/slscisoft slscisoft/
+  ...
+  STEP 8/8: RUN bash checkPrerequisites
+  checkPrerequisites 1.04.01
+  INFO: Checking prerequisites for art and dependent packages.
+  INFO: All known prerequisites satisfied for art and dependencies.
+
+  $ podman run -ti wirecell/slscisoft lsb_release -a
+  LSB Version:	:core-4.1-amd64:core-4.1-noarch
+  Distributor ID:	Scientific
+  Description:	Scientific Linux release 7.9 (Nitrogen)
+  Release:	7.9
+  Codename:	Nitrogen
+
+  $ podman run -v /cvmfs:/cvmfs -ti wirecell/slscisoft
+  [root@4b0eec516074 /]# source /cvmfs/larsoft.opensciencegrid.org/setup_larsoft.sh
+  [root@4b0eec516074 /]# setup larsoft v09_77_00 -q c14:prof
+  [root@4b0eec516074 /]# art --version
+  art 3.12.00
+#+end_example
+
+* User environment
+
+A more friendly base environment which ends in a non-privileged user. 
+
+#+begin_example
+  $ podman build -t wirecell/sluser sluser/ 
+  $ mkdir /srv/bv/sl7
+  $ podman run --userns=keep-id -v /srv/bv/sl7:/data -v /cvmfs:/cvmfs -ti wirecell/sluser
+  [user@4803d56ae213 ~]$ touch /data/junk
+  [user@4803d56ae213 ~]$ whoami
+  user
+  [user@4803d56ae213 ~]$ exit
+  $ ls -l /srv/bv/sl7/junk 
+  -rw-r--r-- 1 bv 100100 0 Aug  2 14:34 /srv/bv/sl7/junk
+#+end_example
+
+This has a problem with both ~--userns=keep-id~ and ~-v /cvmfs~:
+
+#+begin_example
+[user@9bd4f5726e5b ~]$ ls /cvmfs/larsoft.opensciencegrid.org/
+ls: cannot access /cvmfs/larsoft.opensciencegrid.org/: Too many levels of symbolic links
+#+end_example
+
+Without ~--userns=keep-id~ this error message can also happen and
+avoided by first accessing the CVMFS path from the host prior to
+starting the container.  But, with ~--userns=keep-id~, nothing I find
+can avoid this problem.  So we turn to Singularity.
+
+* Make and use singularity image
+
+A Singularity image is smaller and more convenient for doing software development:
+
+#+begin_example
+$ podman save --format oci-archive wirecell/sluser -o sluser.tar
+$ singularity build sluser.sif oci-archive://sluser.tar
+
+$ ls -lh sluser.*
+-rwxr-xr-x 1 bv bv 357M Aug  4 10:54 sluser.sif
+-rw-r--r-- 1 bv bv 600M Aug  4 10:52 sluser.tar
+
+$ ./sluser.sif lsb_release -a
+LSB Version:	:core-4.1-amd64:core-4.1-noarch
+Distributor ID:	Scientific
+Description:	Scientific Linux release 7.9 (Nitrogen)
+Release:	7.9
+Codename:	Nitrogen
+
+$ singularity exec --bind /cvmfs sluser.sif ls /cvmfs/larsoft.opensciencegrid.org/
+new_repository	packages  products  setup_larsoft.sh
+
+$ singularity exec --bind /cvmfs sluser.sif bash
+Singularity> source /cvmfs/larsoft.opensciencegrid.org/setup_larsoft.sh 
+Singularity> setup larsoft v09_77_00 -q c14:prof
+Singularity> art --version
+art 3.12.00
+#+end_example
+

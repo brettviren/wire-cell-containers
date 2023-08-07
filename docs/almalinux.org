@@ -1,0 +1,46 @@
+* Alma Linux 9
+
+To get something less fossilized than SL7.
+
+Nascent support for AL9 is found in SciSoft's [[https://scisoft.fnal.gov/scisoft/bundles/tools/checkPrerequisites-v2][checkPrerequisites-v2]] and [[https://linux-mirrors.fnal.gov/linux/fermilab/el/9/notes.html][Fermilab RPMs]].
+
+Except...
+
+#+begin_example
+$ podman build -t brettviren/al9fnal almalinux
+$ podman run --volume /cvmfs:/cvmfs -ti 'brettviren/al9fnal:latest'
+[user@1829b4c3d687 ~]$ source /cvmfs/larsoft.opensciencegrid.org/setup_larsoft.sh
+[user@1829b4c3d687 ~]$ setup larsoft v09_77_00 -q c14:prof
+bash: lsb_release: command not found
+bash: lsb_release: command not found
+bash: test: too many arguments
+#+end_example
+
+Indeed, [[https://redd.it/wjlh0s][apparently]] AL9 lacks ~lsb_release~.  Go figure.  It seems to be a problem with all RHEL9 with a [[https://bugzilla.redhat.com/show_bug.cgi?id=2012924][WONTFIX]].  IBM has really fsck'ed up an already dumb RH ecosystem....
+
+Note, ~checkPrerequisites-v2~ does not check for ~lsb_release~.
+
+Try to copy in ~lsb_release~ script from Debian 12.  This lets a ~setup larsoft~ succeed but running ~art~ fails:
+
+#+begin_example
+[user@91883fcd4fa0 ~]$ lsb_release -a
+No LSB modules are available.
+Distributor ID:	AlmaLinux
+Description:	AlmaLinux 9.2 (Turquoise Kodkod)
+Release:	9.2
+Codename:	n/a
+[user@91883fcd4fa0 ~]$ source /cvmfs/larsoft.opensciencegrid.org/setup_larsoft.sh
+[user@91883fcd4fa0 ~]$ setup larsoft v09_77_00 -q c14:prof
+[user@91883fcd4fa0 ~]$ art
+art: error while loading shared libraries: libcrypto.so.10: cannot open shared object file: No such file or directory
+[user@91883fcd4fa0 ~]$ dnf search libcrypto.so.10
+/usr/bin/python3: error while loading shared libraries: libcrypt.so.1: cannot open shared object file: No such file or directory
+#+end_example
+
+The usual "secret OS dependencies" of FNAL UPS binaries shows its head.
+
+Give up on this FUBAR sitch.
+
+
+
+
