@@ -1,0 +1,87 @@
+# -*- shell-script -*-
+
+wcls_source_dump() {
+    source "$@" 1>&2
+    direnv dump
+}
+
+# Same as "source foo.sh"
+wcls_source() {
+    direnv_load wcls_source_dump "$@"
+}
+
+# Same as "ups setup pkg ver -q quals"
+wcls_setup() {
+    wcls_source $(ups setup "$@") 1>&2
+}
+
+# provide alias outside of wcls_* names space to provide the
+# equivalent of the ubiquitious UPS "setup".
+setup() {
+    wcls_source $(ups setup "$@") 1>&2
+}
+
+# Mark a directory as having general experiement level environment.
+wcls_experiment() {
+    local name="$1" ; shift
+    if [[ ! -f "$cache" ]] ; then
+        case "$name" in
+            dune)
+                wcls_source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
+                ;;
+            *)
+                log_error "Unsupported experiment: $name"
+                return 1
+                ;;
+        esac
+    fi
+    # WCLS_EXPERIMENT=$name
+    # export WCLS_EXPERIMENT
+}
+
+# Mark a directory as having "project" level environment.  Here a
+# "project" is really just some umbrella UPS package.
+wcls_project() {
+    local pkg="$1"; shift
+    local ver="$1"; shift
+    local qual="$1"; shift
+    wcls_setup "$pkg" "$ver" -q "$qual"
+}
+
+# Mark a directory as being used for "development" of some package.
+# All mrb-controlled files are in a mrb/ subdir.
+wcls_develop() {
+    local proj="$1"; shift
+
+    MRB_PROJECT="$proj"
+    export MRB_PROJECT
+
+    if [[ -d mrb ]] ; then
+        cd mrb
+    else
+        mkdir mrb
+        cd mrb
+        mrb newDev
+    fi
+    local rc=( localProducts_${proj}_*/setup )
+    wcls_source "$rc"
+
+    local bd=( build_* )
+    cd "$bd"
+    wcls_source $MRB_DIR/libexec/mrbSetEnv
+    cd ../..
+}
+
+# Assure that some source is available in a wcls_develop area under
+# its mrb/srcs/.
+wcls_devsrc() {
+    local pkg="$1" ; shift
+
+    if [[ -d "mrb/srcs/$pkg" ]] ; then
+        return
+    fi
+    cd mrb/srcs
+    mrb gitCheckout "$@" "$pkg"
+}
+#-b feature/bv_trackid_torigin -g brettviren larwirecell
+    

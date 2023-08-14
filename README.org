@@ -5,11 +5,36 @@ relevant to the Wire-Cell Toolkit.
 
 * Requirements
 
-Each image is described in a Dockerfile and you are free to use them
-to build images in your favorite way.
+Each image is described in a ~Containerfile~ in a subdirectory of
+~images/~.  You are free to use them to build images in your favorite
+way.  For the remainder of this README and in the automated build
+system, ~podman~ and ~singularity~ are used.
 
-A subset are built automatically which requires ~podman~ and ~singularity~
-to be installed.
+* Prerequisites 
+
+** Podman
+
+The ~podman~ from a recent OS is likely sufficient:
+#+begin_example
+sudo apt install podman
+#+end_example
+
+** SingularityCE
+
+See [[https://docs.sylabs.io/guides/latest/admin-guide/admin_quickstart.html#installation-from-source][SingularityCE Admin Guide]] for installation instructions.  In
+addition,
+
+#+begin_example
+sudo apt install golang-any
+#+end_example
+
+** CVMFS
+
+To use the containers for development against the FNAL ecosystem
+served via CVMFS, a ~/cvmfs/~ mount must be provided by the host OS so
+that it may be mounted into the container.  More info is in
+[[file:docs/cvmfs.org]].
+
 
 * Building
 
@@ -17,15 +42,28 @@ The images are factored and thus have interdependence.  To get that
 correct, their builds are automated:
 
 #+begin_example
-  $ waf configure build
-  $ ls build/*.sif
+  $ waf configure
+  Setting top to                           : /home/bviren/dev/wcls/wire-cell-containers 
+  Setting out to                           : /home/bviren/dev/wcls/wire-cell-containers/build 
+  Checking for program 'podman'            : /usr/bin/podman 
+  Checking for program 'singularity'       : /usr/local/bin/singularity 
+  'configure' finished successfully (0.005s)
+
+  $ waf
+  ...
+  'build' finished successfully (5m42.697s)
+
+  $ ls -lh build/*.sif
+  -rwxr-xr-x 1 bviren bviren 354M Aug 14 09:32 build/wirecell-sluser.sif
 #+end_example
 
-If you wish to install the built Singularity containers to a ~$prefix/containers/singularity/~:
+You can use the Singularity image directly from ~build/~ or you may
+prefer to control an installation prefix to place them in
+~$prefix/containers/singularity/~:
 
 #+begin_example
   $ waf configure --prefix=$HOME/.local
-  $ waf build install
+  $ waf install
 #+end_example
 
 By default images are produced with the "owner" of "wirecell" which
@@ -39,7 +77,10 @@ Singularity image.  Another owner can be set:
 
 * Using
 
-Below are some basic commands to get started.
+Below are some basic commands to get started but additional documents
+provide more advanced usage that will make developing easier.
+
+- [[file:docs/wcls.org][Using direnv to develop Wire-Cell/LArSoft]]
 
 ** Singularity
 
@@ -60,7 +101,7 @@ the container.
 *** Interactive 
 
 #+begin_example
-  $ singularity shell --cleanenv --env TERM=xterm --bind /cvmfs build/wirecell-sluser.sif 
+  $ singularity shell --cleanenv --bind /cvmfs build/wirecell-sluser.sif 
   
   Singularity> source /cvmfs/larsoft.opensciencegrid.org/setup_larsoft.sh 
   Singularity> setup larsoft v09_77_00 -q c14:prof

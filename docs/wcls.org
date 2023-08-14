@@ -1,0 +1,137 @@
+#+title: Using direnv to develop Wire-Cell/LArSoft software
+
+* Overview
+
+This document describes a method to simplify developing software in a
+joint Wire-Cell/LArSoft (WCLS) environment.  Some goals:
+
+- Make it easy to get started on a new project.
+- Make it easy to return to an old project.
+- Smooth out the sometimes bumpy FNAL software development tooling.
+- Allow developers to use their usual development tools from their host OS.
+- Support multiple, independent development projects.
+
+The main ingredients are:
+
+- A container built with ~wire-cell-containers~ package to provide an officially supported OS (Scientific Linux 7) most minimally to provide build and run time environments for the software under development.
+- Additional OS packages in the container to simplify build and run time usage.
+- A reasonable and "safe" generic container shell environment.
+- Layered shell environment management with context memory via ~direnv~.
+
+* Container
+
+See [[file:../README.org][the main README file]].
+
+* Prepare host working area
+
+We'll put all projects in a common root:
+
+#+begin_example
+mkdir -p ~/dev/wcls
+cd ~/dev/wcls
+#+end_example
+
+* Start a container
+
+#+begin_example
+host$ singularity shell --cleanenv --bind /cvmfs /path/to/wirecell-sluser.sif
+Singularity> source /etc/profile
+[wirecell-sluser] bviren@hierocles:~/dev/wcls$
+#+end_example
+
+If a directory outside of ~$HOME~ is used for the working area, it must
+be added as an additional ~--bind~ if it is to be accessed inside the
+container.
+
+* Hierarchical development tree
+
+Once inside the container, you are free to organize your development
+area as you wish.  However, the container provides support to use
+~direnv~ for a well organized area and environment management.  The
+basic idea is to have three levels of directories with each mapping to
+a more specific environment:
+
+- experiment :: defines the "experiment" level setup, eg "dune".
+- umbrella :: defines an "umbrella" or "seed" package.  It particular, defines the things like UPS flavor and qualifiers (compiler).
+- project :: another umbrella or seed package that ~mrb~ uses to determine whatever ~mrb~ does.
+
+This results is a directory tree like:
+
+#+begin_example
+<experiment>/<umbrella>/<project>/mrb/srcs/{repo,...}
+#+end_example
+
+Entering each of the first three directories will configure your shell
+environment to use that context.  Below we will give an example.
+
+* Example 
+
+The following produces a tree with the leaf configured for developing
+~larwirecell~ in the context of DUNE software.  
+
+#+begin_example
+  rm -rf dune/
+  mkdir -p dune/dunesw/toff
+
+  cat <<EOF > dune/.envrc
+  wcls_experiment dune
+  EOF
+
+  cat <<EOF > dune/dunesw/.envrc
+  source_up
+  wcls_project dunesw v09_76_00d00 e20:prof
+  EOF
+
+  cat <<EOF > dune/dunesw/toff/.envrc
+  source_up
+  wcls_develop larsoft
+  wcls_devsrc larwirecell -b feature/bv_trackid_torigin -g brettviren
+  EOF
+#+end_example
+
+This may be pasted into your container shell session.  Entering the
+leaf then activates the environment:
+
+#+begin_example
+  [wirecell-sluser] bviren@hierocles:~/dev/wcls$ cd dune/dunesw/toff
+  direnv: error /home/bviren/dev/wcls/dune/dunesw/toff/.envrc is blocked. Run `direnv allow` to approve its content
+  [wirecell-sluser] bviren@hierocles:~/dev/wcls/dune/dunesw/toff$ direnv allow
+  ....
+  [wirecell-sluser] bviren@hierocles:~/dev/wcls/dune/dunesw/toff$ art --version
+  art 3.12.00
+  [wirecell-sluser] bviren@hierocles:~/dev/wcls/dune/dunesw/toff$ ls -l mrb/srcs/
+  total 8
+  -rw-rw-r-- 1 bviren bviren 1096 Aug 14 10:54 CMakeLists.txt
+  drwxrwxr-x 6 bviren bviren 4096 Aug 14 10:54 larwirecell
+#+end_example
+
+Note, after ~direnv allow~ you will very likely see a warning in red like:
+
+#+begin_example
+  direnv: ([/usr/local/bin/direnv export bash]) is taking a while to execute. Use CTRL-C to give up.
+#+end_example
+
+Just wait.  This is life with UPS and CVMFS.  After trhe local CVMFS cache is populated, subsequent repeats should be faster.
+
+#+begin_example
+  $ cd
+  $ cd -
+#+end_example
+
+* Using the project
+
+With the above in place:
+
+#+begin_example
+  cd dune/dunesw/toff
+  direnv allow  # if prompted
+#+end_example
+
+Now ready to run and/or build the local sources
+
+#+begin_example
+  art --version
+  mrb b
+#+end_example
+
+

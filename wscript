@@ -50,7 +50,7 @@ def build(bld):
         image = f'{owner}/{iname}'
         fname = f'{owner}-{iname}'
 
-        dfile = bld.path.find_resource(f'docker/{iname}/Dockerfile')
+        dfile = bld.path.find_resource(f'images/{iname}/Containerfile')
         pfile = bld.path.find_or_declare(f'{fname}.podman')
         ffiles = [bld.path.find_or_declare(f'{owner}-{n}.podman') for n in deps]
         debug(f'build: {iname} deps: {ffiles}')
@@ -73,6 +73,3 @@ def build(bld):
                 source=tfile, target=sfile)
             bld.install_files('${PREFIX}/share/containers/singularity', sfile)
 
-    # bld(rule=build_image,
-    #     source='docker/slscisoft/Dockerfile',
-    #     target='slscisoft.tar')

@@ -1,0 +1,61 @@
+#+title: CVMFS
+
+CVMFS is a file system which mounts remote directories over HTTP.
+CVMFS is also by many to distribute software binaries.  Once set up it
+provides the simplest way to access UPS product areas provided by
+Fermilab.
+
+It has excellent documentation which needs no repeating here other
+than to link:
+
+- [[https://cernvm.cern.ch/portal/filesystem/downloads][CVMFS download instructions]]
+- [[https://cernvm.cern.ch/portal/filesystem/quickstart][CVMFS quickstart]] 
+
+Do note that CERN's ~cvmfs-release-latest_all.deb~ *may choose the wrong
+distribution*.  For example, as of this writing there is no support for
+Debian 12 "bookworm".  Use Debian 11 "bullseye".
+
+#+begin_example
+ln -sf /usr/share/cvmfs-release/cernvm.list.bullseye \
+       /etc/apt/sources.list.d/cernvm.list 
+#+end_example
+
+To access FNAL CVMFS, edit ~/etc/cvmfs/default.local~ to look something
+like:
+
+#+BEGIN_EXAMPLE
+# required, add more if needed.
+CVMFS_REPOSITORIES=larsoft.opensciencegrid.org,uboone.opensciencegrid.org,dune.opensciencegrid.org
+# requires, replace with actual proxy, or just "DIRECT" if none
+CVMFS_HTTP_PROXY="http://my.local.proxy:1234;DIRECT"
+
+# Optional but recomended:
+
+# limit how much cache is used on your computer, units in MB
+CVMFS_QUOTA_LIMIT=25000
+
+# If not set, some default is chosen (/var/lib/cvmfs/shared).
+# Best to put the cache on your fastest disk which has enough space.
+CVMFS_CACHE_BASE=/mnt/ssd/cvmfs
+#+END_EXAMPLE
+
+Read comments and change example values appropriately.  Refer to CVMFS
+documentation for details.
+
+Check if things work:
+
+#+BEGIN_EXAMPLE
+  # cvmfs_config probe 
+  Probing /cvmfs/larsoft.opensciencegrid.org... OK
+  Probing /cvmfs/uboone.opensciencegrid.org... OK
+  Probing /cvmfs/dune.opensciencegrid.org... OK
+#+END_EXAMPLE
+
+If that fails, try ~setup~:
+
+#+begin_example
+  # cvmfs_config setup
+  # cvmfs_config probe
+#+end_example
+
+

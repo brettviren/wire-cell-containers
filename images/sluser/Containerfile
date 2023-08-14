@@ -11,11 +11,17 @@ RUN yum -y install \
 # direnv
 RUN curl -sfL https://direnv.net/install.sh | bin_path=/usr/local/bin bash
 
-# RUN useradd -ms /usr/bin/bash user -g users
+# bats
+RUN git clone https://github.com/bats-core/bats-core.git && cd bats-core && ./install.sh /usr/local
 
+COPY --chmod=444 wcls.bashrc /etc/profile.d/wcls.sh
+COPY --chmod=444 wcls.direnvrc /etc/direnv/lib/wcls.sh
+
+# RUN useradd -ms /usr/bin/bash user -g users
 # USER user
-#WORKDIR /home/user/
+# WORKDIR /home/user/
+
 #RUN mkdir -p .ssh
 
-ENTRYPOINT ["/usr/bin/bash", "-c"]
-
+#ENTRYPOINT ["/bin/bash", "-c"]
+ENTRYPOINT []
