@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# This file defines initial environment when entering a container.
+#
+# Use like:
+#
+# singularity exec --bind /cvmfs <image.sif> env bash --rcfile wcls.rc
+
+export ps_sing="${SINGULARITY_NAME%.*}"
+export PS1="[$ps_sing] \u@\h:\w$ "
+export PATH=/usr/bin:/usr/local/bin
+export TERM=xterm
+export PAGER=less
+export DISPLAY=:0
+eval "$(direnv hook bash)"

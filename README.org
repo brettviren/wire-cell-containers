@@ -1,77 +1,147 @@
 #+title: Container images for Wire-Cell Toolkit
 
-This repository holds support for building docker and singularity
-container images relevant to the Wire-Cell Toolkit.
+This repository holds support for building Linux container images
+relevant to the Wire-Cell Toolkit.
 
-* WCT Travis-CI builds
+* Requirements
 
-- code :: [[https://travis-ci.org/WireCell/wire-cell-build][https://api.travis-ci.org/WireCell/wire-cell-build.svg?branch=master]]
+Each image is described in a ~Containerfile~ in a subdirectory of
+~images/~.  You are free to use them to build images in your favorite
+way.  For the remainder of this README and in the automated build
+system, ~podman~ and ~singularity~ are used.
 
-- docs :: [[https://travis-ci.org/WireCell/wire-cell-docs][https://api.travis-ci.org/WireCell/wire-cell-docs.svg?branch=master]]
+* Prerequisites 
 
-** Code
+** Podman
 
-#+BEGIN_EXAMPLE
-  $ docker run brettviren/wct-testing ./run.sh
-#+END_EXAMPLE
+The ~podman~ from a recent OS is likely sufficient:
+#+begin_example
+sudo apt install podman
+#+end_example
 
-To do this interactively:
+** SingularityCE
 
-#+BEGIN_EXAMPLE
-  $ docker run -it brettviren/wct-testing
-  testing@b38483963325:~$ ./run.sh
-  testing@b38483963325:~$ wire-cell --help
-#+END_EXAMPLE
+See [[https://docs.sylabs.io/guides/latest/admin-guide/admin_quickstart.html#installation-from-source][SingularityCE Admin Guide]] for installation instructions.  In
+addition,
 
-Note, this image does not include ROOT.
+#+begin_example
+sudo apt install golang-any
+#+end_example
 
-To update docker-hub use files under [[./docker/]].
+** CVMFS
 
-#+BEGIN_EXAMPLE
-  $ cd docker/
-  $ docker build -t brettviren/wct-deb debian/
-  $ docker build -t brettviren/wct-testing testing/
-  $ docker push brettviren/wct-deb 
-  $ docker push brettviren/wct-testing
-#+END_EXAMPLE 
-
-
-
-** Documentation
-
-WCT has a manual, news blog, Doxygen and other web presence at
-https://wirecell.github.io/.  Some of this documentation may be
-rebuilt as part of CI using a container built with files in
-[[./docker/documentation/]].  The container will have an initial build
-that serves as a basis for an incremental.
-
-To just build an incremental interactively:
-
-#+BEGIN_EXAMPLE
-  $ docker run -it brettviren/wct-documentation
-  indocker$ ./anonbuild.sh
-#+END_EXAMPLE
-
-Take care that when you exit all changes are lost.
-
-To build and commit updates to the wirecell.github.io repo:
-
-#+BEGIN_EXAMPLE
-  $ docker run \
-     -e COMMIT_USER="$(git config user.name)" \
-     -e COMMIT_EMAIL="$(git config user.email)" \
-     -e SSH_KEY="$(cat ~/.ssh/id_rsa_wctghdocs)" \
-     -it brettviren/wct-documentation ./update.sh
-#+END_EXAMPLE
-
-Where the ~SSH_KEY~ is the private key corresponding to a "deployment
-key" registered with GitHub.  This key is written to the working
-container which may remain in your Docker system.
+To use the containers for development against the FNAL ecosystem
+served via CVMFS, a ~/cvmfs/~ mount must be provided by the host OS so
+that it may be mounted into the container.  More info is in
+[[file:docs/cvmfs.org]].
 
 
+* Building
 
-* Singularity
+The images are factored and thus have interdependence.  To get that
+correct, their builds are automated:
 
-TBD: singularity containers will be derived from docker.  For now, see [[https://github.com/wirecell/wire-cell-singularity]]
+#+begin_example
+  $ waf configure
+  Setting top to                           : /home/bviren/dev/wcls/wire-cell-containers 
+  Setting out to                           : /home/bviren/dev/wcls/wire-cell-containers/build 
+  Checking for program 'podman'            : /usr/bin/podman 
+  Checking for program 'singularity'       : /usr/local/bin/singularity 
+  'configure' finished successfully (0.005s)
+
+  $ waf
+  ...
+  'build' finished successfully (5m42.697s)
+
+  $ ls -lh build/*.sif
+  -rwxr-xr-x 1 bviren bviren 354M Aug 14 09:32 build/wirecell-sluser.sif
+#+end_example
+
+You can use the Singularity image directly from ~build/~ or you may
+prefer to control an installation prefix to place them in
+~$prefix/containers/singularity/~:
+
+#+begin_example
+  $ waf configure --prefix=$HOME/.local
+  $ waf install
+#+end_example
+
+By default images are produced with the "owner" of "wirecell" which
+matters for the name in the ~podman~ store and the file name for the
+Singularity image.  Another owner can be set:
+
+#+begin_example
+  $ waf --owner myname
+  $ ls build/myname-*.sif
+#+end_example
+
+* Using
+
+Below are some basic commands to get started but additional documents
+provide more advanced usage that will make developing easier.
+
+- [[file:docs/wcls.org][Using direnv to develop Wire-Cell/LArSoft]]
+
+** Singularity
+
+By default, Singularity makes your host files visible and writable in
+the container.
+
+*** Single commands
+
+#+begin_example
+  $ ./build/wirecell-sluser.sif lsb_release -a
+  LSB Version:	:core-4.1-amd64:core-4.1-noarch
+  Distributor ID:	Scientific
+  Description:	Scientific Linux release 7.9 (Nitrogen)
+  Release:	7.9
+  Codename:	Nitrogen
+#+end_example
+
+*** Interactive 
+
+#+begin_example
+  $ singularity shell --cleanenv --bind /cvmfs build/wirecell-sluser.sif 
+  
+  Singularity> source /cvmfs/larsoft.opensciencegrid.org/setup_larsoft.sh 
+  Singularity> setup larsoft v09_77_00 -q c14:prof
+  Singularity> art --version
+  art 3.12.00
+  Singularity> exit
+#+end_example
+
+** Podman
+
+t.b.d.
+
+* Cleaning up
+
+To remove ~build/~:
+#+begin_example
+  $ waf distclean
+#+end_example
+
+The local podman will fill:
+
+#+begin_example
+  $ podman image ls
+#+end_example
+
+Any "dangling" images can be pruned:
+
+#+begin_example
+  $ podman image prune
+#+end_example
+
+Or remove things piecemeal:
+
+#+begin_example
+  $ podman image rm localhost/wirecell/slscisoft
+  $ podman image rm localhost/wirecell/sluser
+#+end_example
 
 
+* Other info
+
+- Some notes on use of [[file:docs/podman.org][podman]].
+- How to exploit [[file:docs/direnv.org][direnv]] to make development with a container easier.
