@@ -14,8 +14,11 @@ def configure(cfg):
 def build_image(task):
     dctx = task.inputs[0].parent
     flag = task.outputs[0]
-    cmd = f'${{PODMAN}} build -t {task.generator.image} {dctx}'
-    cmd += f' | grep -A2 "Successfully tagged localhost/{task.generator.image}" | tail -1 > {flag}'
+    name = task.generator.image
+    slashless = name.replace('/','-')
+    log = f'podman-build-{slashless}.log'
+    cmd = f'${{PODMAN}} build -t {name} {dctx}'
+    cmd += f' | grep -A2 "Successfully tagged localhost/{name}" | tee {log} && tail -1 {log} > {flag}'
 #    cmd += f' && echo {task.generator.image} > {flag}'
     cmd = subst_vars(cmd, task.env)
     debug(f'podman: {cmd}')

@@ -60,7 +60,7 @@ the container.
 *** Interactive 
 
 #+begin_example
-  $ singularity exec --bind /cvmfs build/wirecell-sluser.sif bash
+  $ singularity shell --cleanenv --env TERM=xterm --bind /cvmfs build/wirecell-sluser.sif 
   
   Singularity> source /cvmfs/larsoft.opensciencegrid.org/setup_larsoft.sh 
   Singularity> setup larsoft v09_77_00 -q c14:prof

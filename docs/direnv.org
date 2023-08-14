@@ -1,0 +1,39 @@
+#+title: Using direnv with a container for easier development
+
+* Problem statement
+
+I find it hard to remember how to "set up" a development environment.
+Maybe I have multiple plates spinning or a lot time passes between
+visiting an environment.  I want to just do a small number of commands
+to "get back" to where I was when I last did some work.
+
+This describes how [[https://direnv.net/][direnv]] can be exploited for a solution.  Below I
+assume you have read its home page and understand the basics of how it
+works. 
+
+Examples will use convention:
+
+#+begin_example
+  h$ echo "this is a host prompt"
+  c$ echo "this is a container prompt"
+#+end_example
+
+* Basic container environment
+
+#+begin_example
+  h$ singularity exec --bind /cvmfs -i bash --rcfile wcls.rc
+#+end_example
+
+See [[file:../scripts/wcls.rc][example ~wcls.rc~ file]].  Copy it to near your task working areas and customize it.
+
+#+begin_example
+  h$ mkdir -p ~/tasks
+  h$ cp /path/to/wire-cell-containers/scripts/wcls.rc ~/tasks
+#+end_example
+
+* Task environment
+
+#+begin_example
+
+  
+#+end_example
